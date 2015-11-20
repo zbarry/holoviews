@@ -5,7 +5,7 @@ of this Plot baseclass.
 """
 
 from itertools import groupby, product
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import param
@@ -283,21 +283,23 @@ class DimensionedPlot(Plot):
         # been supplied from a composite plot
         elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, (axiswise, framewise) in norm_opts.items():
+        for group, (axiswise, framewise, dimopts) in norm_opts.items():
             elements = []
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
-            framewise = framewise or self.dynamic
-            if group in ranges and (not framewise or ranges is not self.ranges):
+            framewise = framewise or (self.dynamic is not None)
+            dim_framewise = any(v.get('framewise') for v in dimopts.values())
+            dim_mapwise = any(not v.get('framewise') for v in dimopts.values())
+            if group in ranges and (not (framewise or dim_framewise) or ranges is not self.ranges):
                 continue
-            elif not framewise: # Traverse to get all elements
-                elements = obj.traverse(return_fn, [group])
-            elif key is not None: # Traverse to get elements for each frame
+            if not framewise or dim_mapwise: # Traverse to get all elements
+                map_elements = obj.traverse(return_fn, [group])
+            if framewise or dim_framewise: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
-                elements = [] if frame is None else frame.traverse(return_fn, [group])
+                frame_elements = [] if frame is None else frame.traverse(return_fn, [group])
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
-                self._compute_group_range(group, elements, ranges)
+                self._compute_group_range(group, map_elements, frame_elements, ranges, dimopts, framewise)
         self.ranges.update(ranges)
         return ranges
 
@@ -341,27 +343,37 @@ class DimensionedPlot(Plot):
                     nopts = opts['norm'].options
                     if 'axiswise' in nopts or 'framewise' in nopts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
-                                                 nopts.get('framewise', False))})
+                                                 nopts.get('framewise', False),
+                                                 nopts.get('dimensions', {}))})
         element_specs = [spec for eid, spec in element_specs]
         norm_opts.update({spec: (False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
 
-    @staticmethod
-    def _compute_group_range(group, elements, ranges):
+    @classmethod
+    def _compute_group_range(cls, group, map_elements, frame_elements, ranges, dim_opts, framewise):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
+        group_ranges = defaultdict(list)
+        cls._compute_element_range(group_ranges, frame_elements,
+                                   dim_opts, framewise, False)
+        cls._compute_element_range(group_ranges, map_elements,
+                                   dim_opts, framewise, True)
+        ranges[group] = OrderedDict((k, util.max_range(v))
+                                    for k, v in group_ranges.items())
+
+
+    @classmethod
+    def _compute_element_range(cls, group_ranges, elements, dim_opts, framewise, invert):
         elements = [el for el in elements if el is not None]
-        group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions(label=True):
+            dims = [d for d in el.dimensions(label=True)
+                    if bool(dim_opts.get(d, {}).get('framewise', framewise)-invert)]
+            for dim in dims:
                 dim_range = el.range(dim)
-                if dim not in group_ranges:
-                    group_ranges[dim] = []
                 group_ranges[dim].append(dim_range)
-        ranges[group] = OrderedDict((k, util.max_range(v)) for k, v in group_ranges.items())
 
 
     @classmethod

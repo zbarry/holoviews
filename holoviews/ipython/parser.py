@@ -8,11 +8,13 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
-import param
+from collections import defaultdict
 from itertools import groupby
-import pyparsing as pp
 
-from holoviews.core.options import Options
+import pyparsing as pp
+import param
+
+from ..core.options import Options
 from ..operation import Compositor
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -202,10 +204,25 @@ class OptsSpec(Parser):
         integer value for the normalization plotting option.
         """
         if ('norm_options' not in parse_group): return None
-        opts = parse_group['norm_options'][0].asList()
-        if opts == []: return None
+        unfiltered_opts = parse_group['norm_options'][0].asList()
+        if unfiltered_opts == []: return None
 
         options = ['+framewise', '-framewise', '+axiswise', '-axiswise']
+
+        dim_opts = defaultdict(dict)
+        opts = []
+        for opt in unfiltered_opts:
+            if '=' in opt:
+                dim, opt = opt.split('=')
+                if 'framewise' in opt:
+                    dim_opts[dim]['framewise'] = '+' in opt
+                elif 'axiswise' in opt:
+                    dim_opts[dim]['axiswise'] = '+' in opt
+                else:
+                    raise SyntaxError("Dimension normalization option "
+                                      "not one of %s" % options)
+            else:
+                opts.append(opt)
 
         for normopt in options:
             if opts.count(normopt) > 1:
@@ -233,7 +250,7 @@ class OptsSpec(Parser):
             framewise = True if '+framewise' in opts else False
 
         return dict(axiswise=axiswise,
-                    framewise=framewise)
+                    framewise=framewise, dimensions=dim_opts)
 
 
 

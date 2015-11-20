@@ -935,7 +935,8 @@ class Store(object):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
                                     'norm':  Options(framewise=False, axiswise=False,
                                                      allowed_keywords=['framewise',
-                                                                       'axiswise'])})
+                                                                       'axiswise',
+                                                                       'dimensions'])})
 
             name = view_class.__name__
             cls._options[backend][name] = opt_groups
