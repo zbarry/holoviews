@@ -65,7 +65,7 @@ class OptionsMagic(Magics):
     def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
-        options = cls.update_options(options, items)
+        cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
                 value = items[keyword]
