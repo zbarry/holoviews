@@ -10,6 +10,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
+from ..element import Histogram
 from ..streams import LinkedStream
 
 def displayable(obj):
@@ -249,13 +250,13 @@ def get_sideplot_ranges(plot, element, main, ranges):
     dictionary of ranges.
     """
     key = plot.current_key
-    dims = element.dimensions(label=True)
-    dim = dims[1] if dims[1] != 'Frequency' else dims[0]
+    dims = element.dimensions()
+    dim = dims[1] if dims[1] != Histogram.vdims[0] else dims[0]
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
             range_item = [hm for hm in main.split_overlays()[1]
-                          if dim in hm.dimensions('all', label=True)][0]
+                          if dim in hm.dimensions('all')][0]
     else:
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
@@ -274,7 +275,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = range_item.last
     if isinstance(range_item, CompositeOverlay):
         range_item = [ov for ov in range_item
-                      if dim in ov.dimensions('all', label=True)][0]
+                      if dim in ov.dimensions('all')][0]
     return range_item, main_range, dim
 
 
