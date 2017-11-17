@@ -226,8 +226,8 @@ class extension(param.ParameterizedFunction):
             try:
                 __import__(backend)
             except:
-                self.warning("%s is not available, ensure %s is installed "
-                             "to activate %s extension." % (backend, backend))
+                self.warning("%s could not be imported; %s must be importable "
+                             "to activate the %s extension." % (backend, backend, backend))
             try:
                 __import__('holoviews.plotting.%s' % imp)
                 if selected_backend is None:
