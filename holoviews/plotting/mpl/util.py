@@ -7,7 +7,7 @@ from matplotlib import ticker
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
 from ...core.util import basestring
-from ...element import Raster, RGB
+from ...element import RGB
 
 
 def wrap_formatter(formatter):
