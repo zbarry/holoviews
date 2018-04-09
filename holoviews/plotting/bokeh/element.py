@@ -1082,7 +1082,7 @@ class ColorbarPlot(ElementPlot):
             if cmapper.palette != palette:
                 cmapper.palette = palette
             opts = {k: opt for k, opt in opts.items()
-                    if getattr(cmapper, k) != opt}
+                    if hasattr(cmapper, k) and getattr(cmapper, k) != opt}
             if opts:
                 cmapper.update(**opts)
         else:
