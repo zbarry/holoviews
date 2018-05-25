@@ -18,6 +18,12 @@ from ..element import Element
 from .grid import GridInterface
 from .interface import Interface, DataError
 
+try:
+    import cftime
+    util.datetime_types += (cftime._cftime.DatetimeGregorian,)
+except:
+    pass
+
 
 class XArrayInterface(GridInterface):
 

@@ -1,4 +1,4 @@
-import re, time, sys
+import re, time, sys, calendar
 from distutils.version import LooseVersion
 from collections import defaultdict
 import datetime as dt
@@ -617,8 +617,8 @@ def date_to_integer(date):
         date = dt64_to_dt(date)
     elif pd and isinstance(date, pd.Timestamp):
         date = date.to_pydatetime()
-    if isinstance(date, (dt.datetime, dt.date)):
-        dt_int = time.mktime(date.timetuple())*1000
+    if hasattr(date, 'timetuple'):
+        dt_int = calendar.timegm(date.timetuple())*1000
     else:
         raise ValueError('Datetime type not recognized')
     return dt_int

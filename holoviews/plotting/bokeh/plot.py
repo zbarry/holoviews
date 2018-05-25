@@ -10,7 +10,8 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
-from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
+from ...core.util import (basestring, wrap_tuple, unique_iterator,
+                          get_method_owner, datetime_types)
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
@@ -18,7 +19,7 @@ from ..util import attach_streams, displayable, collate
 from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
-                   bokeh_version)
+                   bokeh_version, date_to_integer)
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
@@ -184,15 +185,31 @@ class BokehPlot(DimensionedPlot):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
-        data = {k: decode_bytes(vs) for k, vs in data.items()}
+        data = self._postprocess_data(data)
         return ColumnDataSource(data=data)
+
+
+    def _postprocess_data(self, data):
+        """
+        Applies necessary type transformation to the data before
+        it is set on a ColumnDataSource.
+        """
+        new_data = {}
+        for k, values in data.items():
+            values = decode_bytes(values) # Bytes need decoding to strings
+
+            # Certain datetime types need to be converted
+            if len(values) and isinstance(values[0], datetime_types):
+                values = np.array([date_to_integer(v) for v in values])
+            new_data[k] = values
+        return new_data
 
 
     def _update_datasource(self, source, data):
         """
         Update datasource with data for a new frame.
         """
-        data = {k: decode_bytes(vs) for k, vs in data.items()}
+        data = self._postprocess_data(data)
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data and not empty):

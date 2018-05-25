@@ -26,7 +26,7 @@ from ..util import dynamic_update, process_cmap
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes)
+                   decode_bytes, date_to_integer)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -528,6 +528,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
             for k, (old, new) in updates.items():
+                if isinstance(new, util.datetime_types):
+                    new = date_to_integer(new)
                 axis_range.update(**{k:new})
                 if streaming:
                     axis_range.trigger(k, old, new)
