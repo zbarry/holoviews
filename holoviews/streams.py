@@ -894,8 +894,9 @@ class PolyDraw(CDSStream):
         cols = list(self.data)
         x, y = source.kdims
         lookup = {'xs': x.name, 'ys': y.name}
-        data = [{lookup.get(c, c): data[c][i] for c in self.data}
-                for i in range(len(data[cols[0]]))]
+        dims = [d.name for d in source.dimensions()]
+        data = [{lookup.get(c, c): data[c][i] for c in self.data
+                 if c in dims or c in lookup} for i in range(len(data[cols[0]]))]
         return source.clone(data)
 
     @property
