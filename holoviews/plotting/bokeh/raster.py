@@ -113,9 +113,9 @@ class RGBPlot(RasterPlot):
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping, style)
 
-    def _glyph_properties(self, plot, element, source, ranges, style):
+    def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         return ElementPlot._glyph_properties(self, plot, element,
-                                             source, ranges, style)
+                                             source, ranges, style, group)
 
 
 
